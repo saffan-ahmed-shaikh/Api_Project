@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Api Project</title>
+    <link rel="shortcut icon" type="image/png" href="favicon.ico" />
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <style>
+        .row .col-auto {
+            margin: 0 0rem 2rem 0rem;
+            text-align: center;
+        }
+
+        img {
+            height: 128px;
+            width: 128px;
+        }
+
+        .defbtn {
+            margin-top: 15px;
+            padding: 5px 40px;
+            border: none;
+            color: white;
+            border-radius: 15px;
+        }
+
+        .delbtn {
+            background-color: red;
+        }
+
+        .editbtn {
+            background-color: #2196f3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="text-end p-3"><button class="btn btn-primary" onclick="addAndEditDetails(null,'add')">+ Add</button>
+    </div>
+    <div class="container-fluid">
+        <h1 class="text-center my-4">Hello ReqRes users!</h1>
+        <h2 id="errorMsg" class="text-center text-danger">No data found</h2>
+        <div id="mainbody"></div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" id="myForm" onsubmit="return detailsSubmitFun(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel"><span id="modalTitle">Add</span> Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="myFormContainer">
+                        <div class="mb-3">
+                            <label for="fullNameInputContrl" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="fullNameInputContrl"
+                                placeholder="Write here...">
+                        </div>
+                        <div class="mb-3">
+                            <label for="imgInputContrl" class="form-label">Image Link</label>
+                            <input type="url" class="form-control" id="imgInputContrl"
+                                placeholder="Enter Your Image Link Here...">
+                        </div>
+                        <div class="mb-3">
+                            <label for="emailInputContrl" class="form-label">Email ID</label>
+                            <input type="email" class="form-control" id="emailInputContrl" placeholder="Write here...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="js/bootstrap.min.js"></script>
+    <script>
+        var myModal = new bootstrap.Modal(document.getElementById('exampleModal'), {
+            keyboard: false
+        });
+
+        var globalUserListData;
+        var editModeIs = false;
+        var selectedObj = {};
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "https://reqres.in/api/users?page=2", true);
+        xhr.onload = function () {
+            var userListAll = JSON.parse(xhr.responseText);
+            var userListData = userListAll.data;
+            globalUserListData = userListData;
+            console.log("userListAll", userListAll);
+            updatedata(userListData);
+        };
+        xhr.send();
+
+        function myDeleteFun(data) {
+            console.log("data", data);
+            for (let i = 0; i < globalUserListData.length; i++) {
+                const element = globalUserListData[i];
+                if (element.id == data.id) {
+                    globalUserListData.splice(i, 1);
+                    break;
+                }
+            }
+            updatedata(globalUserListData);
+        }
+
+        function updatedata(userListData) {
+            document.getElementById("mainbody").innerHTML = "";
+            var myRow = document.createElement("DIV");
+            myRow.classList.add("row");
+            myRow.classList.add("justify-content-center");
+
+            for (let index = 0; index < userListData.length; index++) {
+                const element = userListData[index];
+                var myColDiv = document.createElement("DIV");
+                myColDiv.classList.add("col-auto");
+                var myNameStrong = document.createElement("strong");
+                if (element.name) {
+                    myNameStrong.innerHTML = element.name
+                } else {
+                    myNameStrong.innerHTML = element.first_name + " " + element.last_name;
+                }
+                var myName = document.createElement("p");
+                myName.append(myNameStrong)
+                myName.classList.add("my-3")
+                var myEmail = document.createElement("p");
+                myEmail.innerHTML = element.email;
+                var myImg = document.createElement("IMG");
+                myImg.src = element.avatar;
+                var myDeleteBtnDiv = document.createElement("DIV");
+                var deleteBtn = "<button class='delbtn defbtn' onclick='myDeleteFun(" + JSON.stringify(element) +
+                    ")'>Delete</button>";
+                myDeleteBtnDiv.innerHTML = deleteBtn
+                var myEditBtnDiv = document.createElement("DIV");
+                var editBtn = "<button class='editbtn defbtn' onclick='addAndEditDetails(" + JSON.stringify(element) +
+                    ",\"edit\")'>Edit</button>";
+                myEditBtnDiv.innerHTML = editBtn
+                myColDiv.append(myName, myEmail, myImg, myDeleteBtnDiv, myEditBtnDiv);
+                myRow.append(myColDiv);
+                document.getElementById("mainbody").append(myRow);
+            }
+            checkData();
+        }
+
+        function addAndEditDetails(getObj, secParam) {
+            console.log("getObj", getObj);
+            console.log("secParam", secParam);
+            myModal.show();
+            if (secParam == "add") {
+                document.getElementById("myForm").reset();
+                document.getElementById("modalTitle").innerHTML = "Add";
+                editModeIs = false;
+            } else {
+                document.getElementById("modalTitle").innerHTML = "Edit";
+                if (getObj.name) {
+                    document.getElementById("fullNameInputContrl").value = getObj.name;
+                } else {
+                    document.getElementById("fullNameInputContrl").value = getObj.first_name + " " + getObj.last_name;
+                }
+                document.getElementById("imgInputContrl").value = getObj.avatar;
+                document.getElementById("emailInputContrl").value = getObj.email;
+                selectedObj = getObj;
+                editModeIs = true;
+            }
+        }
+
+        function detailsSubmitFun(event) {
+            event.preventDefault();
+            var nameInputVal = document.getElementById("fullNameInputContrl").value;
+            var imgInputVal = document.getElementById("imgInputContrl").value;
+            var emailInputVal = document.getElementById("emailInputContrl").value;
+
+            if (editModeIs) {
+                for (let index = 0; index < globalUserListData.length; index++) {
+                    if (globalUserListData[index].id == selectedObj.id) {
+                        globalUserListData[index].name = nameInputVal;
+                        globalUserListData[index].avatar = imgInputVal;
+                        globalUserListData[index].email = emailInputVal;
+                        break;
+                    }
+                }
+            } else {
+                var uniqueId = new Date().getTime();
+                var newObj = {
+                    "id": uniqueId,
+                    "name": nameInputVal,
+                    "avatar": imgInputVal,
+                    "email": emailInputVal
+                };
+                globalUserListData.push(newObj);
+            }
+            updatedata(globalUserListData)
+            document.getElementById("myForm").reset();
+            myModal.hide();
+        }
+
+        function checkData() {
+            if (globalUserListData.length > 0) {
+                document.getElementById("errorMsg").style.display = "none";
+            } else {
+                document.getElementById("errorMsg").style.display = "block";
+            }
+        }
+    </script>
+</body>
+
+</html>
